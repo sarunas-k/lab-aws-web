@@ -22,6 +22,6 @@ jobs:
 
   image:
     needs: test
-    uses: sarunas-k/lab-github-workflows/.github/workflows/app-ci.yml@main
+    uses: sarunas-k/lab-aws-github-workflows/.github/workflows/app-ci.yml@main
     with:
       image-name: lab-web

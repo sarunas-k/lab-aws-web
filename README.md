@@ -1,4 +1,4 @@
-# lab-web
+# lab-aws-web
 
 Static dashboard for the lab project: visitor counters (hero figure and tiles), a 30-day visits and unique visitors chart, and the platform health cards.
 Plain HTML, CSS and ES modules. There is no framework, bundler or runtime dependency, so nothing to pin or patch.
@@ -9,7 +9,7 @@ Plain HTML, CSS and ES modules. There is no framework, bundler or runtime depend
 |---|---|---|
 | `/` , `/app.js`, `/lib.js`, `/style.css` | nginx pod in EKS (this image, port 8080) | the page |
 | `/api/*` | `lab-backend` pod (ALB path rule) | `GET /api/visit` records a visit and returns counters and history |
-| `/metrics/metrics.json` | S3 through CloudFront | written every minute by the metrics Lambda (`lab-infra-platform`, edge stack) |
+| `/metrics/metrics.json` | S3 through CloudFront | written every minute by the metrics Lambda (`lab-aws-infra-environments`, edge stack) |
 | `/images/*` | S3 through CloudFront | the card icons in `src/images/`, synced by CI |
 
 The page calls `/api/visit` once per load. If the counters are down (HTTP 503) it shows dashes and still draws the history; if the API is unreachable it says so.
@@ -36,4 +36,4 @@ Only the page files are in the image. Icons are not copied in because CloudFront
 ## CI/CD
 
 Pull requests run the unit tests, a syntax check and an image build. The release steps (scan, sign, push to ECR, sync `src/images` to the environment's
-assets bucket, bump `lab-gitops`) come from the reusable workflows in `lab-github-workflows`, which are not written yet.
+assets bucket, bump `lab-aws-gitops`) come from the reusable workflows in `lab-aws-github-workflows`, which are not written yet.

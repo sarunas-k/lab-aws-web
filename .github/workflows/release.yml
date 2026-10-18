@@ -1,7 +1,7 @@
 name: release
 
 # main -> dev, tag vX.Y.Z -> test, manual dispatch (with a tag) -> prod.
-# Every environment rebuilds the same commit in its own AWS account and opens a lab-gitops PR.
+# Every environment rebuilds the same commit in its own AWS account and opens a lab-aws-gitops PR.
 on:
   push:
     branches: [main]
@@ -19,39 +19,39 @@ permissions:
 jobs:
   dev:
     if: github.ref == 'refs/heads/main'
-    uses: sarunas-k/lab-github-workflows/.github/workflows/app-release.yml@main
+    uses: sarunas-k/lab-aws-github-workflows/.github/workflows/app-release.yml@main
     with:
       environment: dev
       image-name: lab-web
       values-file: web.yaml
       aws-account-id: ${{ vars.DEV_ACCOUNT_ID }}
-      gitops-repo: sarunas-k/lab-gitops
+      gitops-repo: sarunas-k/lab-aws-gitops
     secrets:
       GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
 
   test:
     if: startsWith(github.ref, 'refs/tags/v')
-    uses: sarunas-k/lab-github-workflows/.github/workflows/app-release.yml@main
+    uses: sarunas-k/lab-aws-github-workflows/.github/workflows/app-release.yml@main
     with:
       environment: test
       image-name: lab-web
       values-file: web.yaml
       aws-account-id: ${{ vars.TEST_ACCOUNT_ID }}
       version: ${{ github.ref_name }}
-      gitops-repo: sarunas-k/lab-gitops
+      gitops-repo: sarunas-k/lab-aws-gitops
     secrets:
       GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
 
   prod:
     if: github.event_name == 'workflow_dispatch'
-    uses: sarunas-k/lab-github-workflows/.github/workflows/app-release.yml@main
+    uses: sarunas-k/lab-aws-github-workflows/.github/workflows/app-release.yml@main
     with:
       environment: prod
       image-name: lab-web
       values-file: web.yaml
       aws-account-id: ${{ vars.PROD_ACCOUNT_ID }}
       version: ${{ inputs.tag }}
-      gitops-repo: sarunas-k/lab-gitops
+      gitops-repo: sarunas-k/lab-aws-gitops
     secrets:
       GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
 
