@@ -1,0 +1,73 @@
+name: release
+
+# main -> dev, tag vX.Y.Z -> test, manual dispatch (with a tag) -> prod.
+# Every environment rebuilds the same commit in its own AWS account and opens a lab-gitops PR.
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to deploy to prod (e.g. v1.2.3)
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  dev:
+    if: github.ref == 'refs/heads/main'
+    uses: sarunas-k/lab-github-workflows/.github/workflows/app-release.yml@main
+    with:
+      environment: dev
+      image-name: lab-web
+      values-file: web.yaml
+      aws-account-id: ${{ vars.DEV_ACCOUNT_ID }}
+      gitops-repo: sarunas-k/lab-gitops
+    secrets:
+      GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+
+  test:
+    if: startsWith(github.ref, 'refs/tags/v')
+    uses: sarunas-k/lab-github-workflows/.github/workflows/app-release.yml@main
+    with:
+      environment: test
+      image-name: lab-web
+      values-file: web.yaml
+      aws-account-id: ${{ vars.TEST_ACCOUNT_ID }}
+      version: ${{ github.ref_name }}
+      gitops-repo: sarunas-k/lab-gitops
+    secrets:
+      GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+
+  prod:
+    if: github.event_name == 'workflow_dispatch'
+    uses: sarunas-k/lab-github-workflows/.github/workflows/app-release.yml@main
+    with:
+      environment: prod
+      image-name: lab-web
+      values-file: web.yaml
+      aws-account-id: ${{ vars.PROD_ACCOUNT_ID }}
+      version: ${{ inputs.tag }}
+      gitops-repo: sarunas-k/lab-gitops
+    secrets:
+      GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+
+  assets:
+    # Card icons live in S3 and are served by CloudFront (the image only contains the page).
+    if: github.ref == 'refs/heads/main'
+    needs: dev
+    runs-on: ubuntu-24.04
+    environment: dev
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.DEV_ACCOUNT_ID }}:role/lab-github-assets-sync
+          aws-region: eu-central-1
+      - run: aws s3 sync src/images s3://lab-dev-assets/images --delete

@@ -19,8 +19,9 @@ jobs:
       - run: npm test
       - name: Syntax check
         run: node --check src/app.js && node --check src/lib.js
-      - name: Build image (no push)
-        run: docker build -t lab-web:ci .
-      # TODO: SonarCloud, Trivy, hadolint, ECR push, cosign, the gitops bump, and
-      #   aws s3 sync src/images s3://lab-<env>-assets/images --delete
-      # (role lab-github-assets-sync) come from the reusable workflows in lab-github-workflows.
+
+  image:
+    needs: test
+    uses: sarunas-k/lab-github-workflows/.github/workflows/app-ci.yml@main
+    with:
+      image-name: lab-web
